@@ -2,7 +2,7 @@
 
 דף נחיתה סטטי למחזור **אוקטובר-נובמבר 2026**. הילה אפללו ואנה מיוחס.
 
-**חי:** https://red-detoxx.netlify.app
+**חי:** https://red-detox.netlify.app
 **ריפו:** https://github.com/meyuhas/red-detox
 
 ---
@@ -60,11 +60,13 @@ const CYCLE = {
 
 ## פרסום
 
-נטליפיי מחוברת לריפו במצב push. כל דחיפה ל-`main` בונה ומפרסמת תוך פחות מדקה.
+פרויקט `red-detox` בנטליפיי, בטים **תזונת הניקוי האדומה** (המשתמשת `meyuhastv`), מחובר לריפו במצב push. כל דחיפה ל-`main` בונה ומפרסמת תוך שניות.
+
+**לא להתבלבל עם `red-detoxx`** (עם שני X) - אתר ישן בחשבון אחר, שנוצר כעקיפה כשנגמרו שם הקרדיטים. הוא תקוע על אפריל, לא מחובר לגיטהאב, ולא ייבנה. הכתובת הקנונית היא זו בלי ה-X הכפול.
 
 ```bash
 git push origin main
-curl -s https://red-detoxx.netlify.app | grep 4.10
+curl -s https://red-detox.netlify.app | grep 4.10
 ```
 
 ---
