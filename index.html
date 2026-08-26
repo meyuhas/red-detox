@@ -6,6 +6,8 @@
 <title>התחברות — תזונת הניקוי האדומה | אוקטובר–נובמבר 2026</title>
 <meta name="description" content="סדנת התחברות — תזונת הניקוי האדומה עם הילה אפללו ואנה מיוחס. 30 יום של שינוי הדרגתי. ">
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;700;900&family=Heebo:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4.4.1/dist/email.min.js"></script>
+<script>emailjs.init('yy84XDyJOdogTvmZc');</script>
 
 <!-- ─── CONFIGURATION ────────────────────────────────────────────
   1. Formspree: צור חשבון ב-formspree.io → קבל Form ID → הדבק למטה
@@ -21,27 +23,11 @@
     CONTACT_EMAIL: 'hilaaflalo@gmail.com'
   };
 
-  /* ──────────────────────────────────────────────────────────────
-     מחזור הסדנה — נקודת השינוי היחידה בדף.
+</script>
 
-     לפתיחת מחזור חדש מעדכנים כאן בלבד. כל התאריכים בשעון
-     ישראל; ההמרה ל-UTC ומעבר שעון קיץ/חורף מחושבים אוטומטית,
-     ולכן אין צורך לגעת בשעות גם כשהמחזור חוצה את סוף אוקטובר.
-
-     הדף עובר בעצמו בין ארבעה מצבים:
-       webinar  עד תום וובינר ההיכרות — באנר ספירה + שורת וובינר
-       pre      הוובינר חלף — הסדנה מפורסמת בלעדיו, ספירה לפתיחה
-       late     הסדנה נפתחה — חלון למאחרים להצטרף עד המפגש השני
-       closed   החלון נסגר — כל התאריכים הופכים ל"בקרוב מועד נוסף"
-     ────────────────────────────────────────────────────────────── */
-  const CYCLE = {
-    WEBINAR:          { date: '2026-10-04', time: '20:00', minutes: 60 },
-    COURSE_START:     '2026-10-11',   // מפגש פתיחה
-    LATE_JOIN_UNTIL:  '2026-10-18',   // המפגש השני — החלון האחרון למאחרים
-    TIME:             '20:00',
-    NEXT_CYCLE_TEXT:  'בקרוב מועד נוסף',
-    TZ:               'Asia/Jerusalem'
-  };
+<!-- מחזור הסדנה — מקור אמת אחד, נטען גם ב-thanks-webinar.html -->
+<script src="cycle.js"></script>
+<script>
 </script>
 
 <style>
@@ -1258,37 +1244,11 @@ document.getElementById('pricingFullBtn').href   = CONFIG.SIGNUP_FULL;
 // מצב הדף נגזר מהתאריכים ב-CYCLE. אין מה לתחזק כאן בפתיחת מחזור.
 (function () {
   const $ = id => document.getElementById(id);
-
-  // היסט אזור הזמן של ישראל ברגע נתון, כולל שעון קיץ/חורף
-  function tzOffset(ts) {
-    const p = new Intl.DateTimeFormat('en-US', {
-      timeZone: CYCLE.TZ, hour12: false, year: 'numeric', month: '2-digit',
-      day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'
-    }).formatToParts(new Date(ts)).reduce((a, x) => (a[x.type] = x.value, a), {});
-    const asUTC = Date.UTC(+p.year, p.month - 1, +p.day,
-                           p.hour % 24, +p.minute, +p.second);
-    return asUTC - ts;
-  }
-
-  // '2026-10-04' + '20:00' בשעון ישראל → רגע מוחלט
-  function at(dateStr, timeStr) {
-    const [Y, M, D] = String(dateStr).split('-').map(Number);
-    const [hh, mm]  = String(timeStr || '00:00').split(':').map(Number);
-    const naive = Date.UTC(Y, M - 1, D, hh, mm);
-    let ts = naive;
-    for (let i = 0; i < 2; i++) ts = naive - tzOffset(ts);
-    return ts;
-  }
-
-  const fmtDate = ts => new Date(ts).toLocaleDateString('he-IL',
-    { timeZone: CYCLE.TZ, weekday: 'long', day: 'numeric', month: 'numeric' });
-  const short = ts => new Date(ts).toLocaleDateString('he-IL',
-    { timeZone: CYCLE.TZ, day: 'numeric', month: 'numeric' });
-
-  const webStart = at(CYCLE.WEBINAR.date, CYCLE.WEBINAR.time);
-  const webEnd   = webStart + (CYCLE.WEBINAR.minutes || 60) * 60000;
-  const courseStart = at(CYCLE.COURSE_START, CYCLE.TIME);
-  const lateEnd     = at(CYCLE.LATE_JOIN_UNTIL, CYCLE.TIME) + 60 * 60000;
+  const { at, fmtDate, short } = Cycle;
+  const webStart    = Cycle.webinarStart;
+  const webEnd      = Cycle.webinarEnd;
+  const courseStart = Cycle.courseStart;
+  const lateEnd     = Cycle.lateEnd;
 
   function stateAt(now) {
     if (now < webEnd)      return 'webinar';
