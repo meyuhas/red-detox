@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>נרשמת לוובינר — תזונת הניקוי האדומה</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;700;900&family=Heebo:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="cycle.js"></script>
+<style>
+:root {
+  --green-dark:#2D4A2D; --green-mid:#3D5C3D;
+  --mint:#E8F5F0; --mint-mid:#C8E6DC; --mint-deep:#8BBFAA;
+  --red:#B83232; --terracotta:#C4714A;
+  --text-dark:#1A2A1A; --text-mid:#4A6A5A;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--mint); color:var(--text-dark);
+  font-family:'Heebo',sans-serif; font-weight:300; line-height:1.7;
+  min-height:100vh; display:flex; align-items:center; justify-content:center;
+  padding:40px 20px;
+}
+.card{
+  max-width:520px; width:100%; background:#fff;
+  border:1.5px solid var(--mint-mid); border-radius:20px;
+  padding:40px 34px; text-align:center;
+  box-shadow:0 14px 44px rgba(45,74,45,0.08);
+}
+.success-icon{
+  width:64px; height:64px; border-radius:50%;
+  background:linear-gradient(135deg,var(--green-mid),var(--green-dark));
+  display:flex; align-items:center; justify-content:center;
+  font-size:28px; color:#fff; margin:0 auto 22px;
+}
+h1{
+  font-family:'Frank Ruhl Libre',serif; font-weight:700;
+  font-size:26px; line-height:1.35; color:var(--green-dark); margin:0 0 12px;
+}
+p{font-size:15px; color:var(--text-mid); margin:0 0 14px}
+.when{
+  background:var(--mint); border-radius:14px; padding:16px 18px; margin:24px 0 8px;
+  font-size:16px; color:var(--green-dark); font-weight:400;
+}
+.when strong{font-weight:500}
+.note{font-size:13px; color:var(--text-mid); opacity:.85}
+.calendar-section{margin-top:28px}
+.calendar-label{font-size:13px; color:var(--text-mid); font-weight:500; margin-bottom:12px}
+.calendar-buttons{display:flex; flex-direction:column; gap:10px}
+.cal-btn{
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  padding:12px 20px; border-radius:12px;
+  font-family:'Heebo',sans-serif; font-size:14px; font-weight:400;
+  cursor:pointer; border:1.5px solid; text-decoration:none; transition:all .2s;
+}
+.cal-google{background:#fff; border-color:#DADCE0; color:#3C4043}
+.cal-google:hover{background:#F8F9FA}
+.cal-apple{background:#000; border-color:#000; color:#fff}
+.cal-apple:hover{background:#222}
+.cal-outlook{background:#0078D4; border-color:#0078D4; color:#fff}
+.cal-outlook:hover{background:#006CBF}
+.back{display:inline-block; margin-top:26px; font-size:14px; color:var(--terracotta); text-decoration:none}
+.back:hover{text-decoration:underline}
+.contact{margin-top:22px; font-size:13px; color:var(--text-mid)}
+.contact a{color:var(--terracotta); text-decoration:none}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="success-icon">✓</div>
+  <h1 id="headline">נרשמת לוובינר</h1>
+  <p>שמרנו לך מקום. קישור הזום נשלח אלייך במייל, ואם הוא לא הגיע תוך כמה דקות כדאי להציץ גם בספאם.</p>
+
+  <div class="when">📅 <strong id="when">—</strong><br><span class="note">בזום · המפגש נמשך כשעה</span></div>
+
+  <div class="calendar-section">
+    <div class="calendar-label">שלא יברח לך — להוסיף ליומן</div>
+    <div class="calendar-buttons">
+      <a class="cal-btn cal-google" id="calGoogle" target="_blank" rel="noopener">Google Calendar</a>
+      <a class="cal-btn cal-apple" id="calApple" download="webinar.ics">Apple / iCal</a>
+      <a class="cal-btn cal-outlook" id="calOutlook" target="_blank" rel="noopener">Outlook</a>
+    </div>
+  </div>
+
+  <a class="back" href="/">חזרה לדף הסדנה ←</a>
+  <p class="contact">שאלות? <a href="mailto:hilaaflalo@gmail.com">hilaaflalo@gmail.com</a> · 052-3435558</p>
+</div>
+
+<script>
+(function () {
+  const start = Cycle.webinarStart, end = Cycle.webinarEnd;
+  const whenText = Cycle.fmtDate(start) + ', ' + CYCLE.WEBINAR.time;
+  document.getElementById('when').textContent = whenText;
+
+  // שם הנרשמת, אם הגיעה דרך הטופס
+  try {
+    const n = sessionStorage.getItem('webinarName');
+    if (n) document.getElementById('headline').textContent = n + ', נרשמת לוובינר';
+  } catch (_) {}
+
+  const TITLE = 'וובינר היכרות — תזונת הניקוי האדומה';
+  const DETAILS = 'מפגש זום חינמי עם הילה אפללו ואנה מיוחס, לפני פתיחת הסדנה.';
+  const z = ts => new Date(ts).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+
+  document.getElementById('calGoogle').href =
+    'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+    '&text=' + encodeURIComponent(TITLE) +
+    '&dates=' + z(start) + '/' + z(end) +
+    '&details=' + encodeURIComponent(DETAILS);
+
+  document.getElementById('calOutlook').href =
+    'https://outlook.live.com/calendar/0/deeplink/compose?path=/calendar/action/compose&rru=addevent' +
+    '&subject=' + encodeURIComponent(TITLE) +
+    '&startdt=' + new Date(start).toISOString() +
+    '&enddt=' + new Date(end).toISOString() +
+    '&body=' + encodeURIComponent(DETAILS);
+
+  const ics = [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//red-detox//HE',
+    'BEGIN:VEVENT',
+    'UID:webinar-' + z(start) + '@red-detox',
+    'DTSTAMP:' + z(start),
+    'DTSTART:' + z(start),
+    'DTEND:' + z(end),
+    'SUMMARY:' + TITLE,
+    'DESCRIPTION:' + DETAILS,
+    'END:VEVENT', 'END:VCALENDAR'
+  ].join('\r\n');
+  document.getElementById('calApple').href =
+    'data:text/calendar;charset=utf-8,' + encodeURIComponent(ics);
+})();
+</script>
+</body>
+</html>
