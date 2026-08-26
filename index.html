@@ -1349,6 +1349,7 @@ document.getElementById('pricingFullBtn').href   = CONFIG.SIGNUP_FULL;
   }
 
   window.__cycleStateAt = stateAt;   // לבדיקות
+  window.__cycleRender  = render;    // לבדיקות
   render(Date.now());
   setInterval(() => render(Date.now()), 60000);
 })();
