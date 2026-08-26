@@ -671,6 +671,20 @@ footer {
 .divider-or { text-align:center; color:var(--text-mid); font-size:12px; margin:8px 0; opacity:0.5; }
 
 /* ============ WEBINAR SIGNUP ============ */
+.phone-row { display:flex; gap:8px; align-items:stretch; direction:ltr; }
+.phone-row select, .phone-row input {
+  font-family:'Heebo',sans-serif; font-size:15px; font-weight:300;
+  color:var(--text-dark); background:#fff;
+  border:1.5px solid var(--mint-mid); border-radius:12px;
+  padding:12px 10px; outline:none; transition:border-color .2s;
+  min-width:0;
+}
+.phone-row select { flex:0 0 auto; cursor:pointer; text-align:center; }
+.phone-row #inputPhone { flex:1 1 auto; letter-spacing:.04em; }
+.phone-row select:focus, .phone-row input:focus { border-color:var(--red); }
+.phone-row .error { border-color:var(--red); background:#FFF5F5; }
+
+/* ============ WEBINAR SIGNUP ============ */
 .signup-section { background:var(--mint); }
 .signup-section .section-title { color:var(--green-dark); }
 .signup-section .section-tag { color:var(--red); justify-content:center; }
@@ -1176,7 +1190,33 @@ footer {
       </div>
       <div class="form-group">
         <label for="inputPhone">טלפון נייד</label>
-        <input type="tel" id="inputPhone" name="phone" placeholder="050-0000000" autocomplete="tel" dir="ltr">
+        <div class="phone-row">
+          <select id="inputCountry" aria-label="קוד מדינה">
+            <option value="972" selected>🇮🇱 +972</option>
+            <option value="1">🇺🇸 +1</option>
+            <option value="44">🇬🇧 +44</option>
+            <option value="33">🇫🇷 +33</option>
+            <option value="7">🇷🇺 +7</option>
+            <option value="49">🇩🇪 +49</option>
+            <option value="other">אחר</option>
+          </select>
+          <select id="inputPrefix" aria-label="קידומת">
+            <option value="050">050</option>
+            <option value="052">052</option>
+            <option value="053">053</option>
+            <option value="054" selected>054</option>
+            <option value="055">055</option>
+            <option value="058">058</option>
+            <option value="02">02</option>
+            <option value="03">03</option>
+            <option value="04">04</option>
+            <option value="08">08</option>
+            <option value="09">09</option>
+            <option value="077">077</option>
+          </select>
+          <input type="tel" id="inputPhone" placeholder="0000000" autocomplete="tel-national" inputmode="numeric" dir="ltr">
+        </div>
+        <input type="hidden" id="phoneFull" name="phone">
       </div>
 
       <button type="submit" class="btn-red" id="submitBtn" style="width:100%;justify-content:center;margin-top:4px;">
@@ -1382,6 +1422,38 @@ document.getElementById('pricingFullBtn').href   = CONFIG.SIGNUP_FULL;
   const when = document.getElementById('signupWhen');
   if (when) when.textContent = Cycle.fmtDate(Cycle.webinarStart) + ', ' + CYCLE.WEBINAR.time;
 
+  const country = document.getElementById('inputCountry');
+  const prefix  = document.getElementById('inputPrefix');
+  const phone   = document.getElementById('inputPhone');
+  const phoneFull = document.getElementById('phoneFull');
+
+  // רשימת קידומות ישראלית רלוונטית רק לישראל
+  function syncCountry() {
+    const il = country.value === '972';
+    prefix.style.display = il ? '' : 'none';
+    phone.placeholder = il ? '0000000' : 'מספר מלא';
+    phone.maxLength = il ? 7 : 15;
+  }
+  country.addEventListener('change', syncCountry);
+  syncCountry();
+
+  phone.addEventListener('input', () => {
+    phone.value = phone.value.replace(/\D/g, '');
+    phone.classList.remove('error');
+  });
+
+  // מרכיב '+972-54-8121717'. מחזיר '' אם ריק, null אם לא תקין.
+  function buildPhone() {
+    const digits = phone.value.replace(/\D/g, '');
+    if (!digits) return '';
+    if (country.value !== '972') {
+      return digits.length >= 6 ? '+' + country.value + '-' + digits : null;
+    }
+    const p = prefix.value.replace(/^0/, '');   // 054 → 54
+    if (digits.length !== 7) return null;       // נייד וקווי כאחד: 7 ספרות
+    return '+972-' + p + '-' + digits;
+  }
+
   const btn  = document.getElementById('submitBtn');
   const text = document.getElementById('submitText');
   const err  = document.getElementById('submitError');
@@ -1391,7 +1463,10 @@ document.getElementById('pricingFullBtn').href   = CONFIG.SIGNUP_FULL;
 
     const nameV  = document.getElementById('inputName').value.trim();
     const emailV = document.getElementById('inputEmail').value.trim();
-    const phoneV = document.getElementById('inputPhone').value.trim();
+    const phoneBuilt = buildPhone();
+    if (phoneBuilt === null) { phone.classList.add('error'); return; }
+    const phoneV = phoneBuilt;
+    phoneFull.value = phoneBuilt;
 
     let valid = true;
     [['inputName', nameV], ['inputEmail', emailV]].forEach(([id, v]) => {
