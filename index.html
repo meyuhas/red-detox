@@ -18,11 +18,29 @@
     SIGNUP_LINK:   'https://app.icount.co.il/m/2595c/c23e5p2u69be9ef2497?utm_source=iCount&utm_medium=paypage&utm_campaign=2',  // ← ₪1,500
     SIGNUP_FULL:   'https://app.icount.co.il/m/6cc6e/c23e5p6u69bea162ac0?utm_source=iCount&utm_medium=paypage&utm_campaign=6',  // ← הרשמה ₪1,500
     ZOOM_LINK:     '',                        // ← קישור זום (יוסף כשיהיה)
-    WEBINAR_DATE: {
-      start: '20261004T170000Z',   // וובינר היכרות · יום ראשון 4.10, 20:00 שעון ישראל = 17:00 UTC
-      end:   '20261004T180000Z'
-    },
     CONTACT_EMAIL: 'hilaaflalo@gmail.com'
+  };
+
+  /* ──────────────────────────────────────────────────────────────
+     מחזור הסדנה — נקודת השינוי היחידה בדף.
+
+     לפתיחת מחזור חדש מעדכנים כאן בלבד. כל התאריכים בשעון
+     ישראל; ההמרה ל-UTC ומעבר שעון קיץ/חורף מחושבים אוטומטית,
+     ולכן אין צורך לגעת בשעות גם כשהמחזור חוצה את סוף אוקטובר.
+
+     הדף עובר בעצמו בין ארבעה מצבים:
+       webinar  עד תום וובינר ההיכרות — באנר ספירה + שורת וובינר
+       pre      הוובינר חלף — הסדנה מפורסמת בלעדיו, ספירה לפתיחה
+       late     הסדנה נפתחה — חלון למאחרים להצטרף עד המפגש השני
+       closed   החלון נסגר — כל התאריכים הופכים ל"בקרוב מועד נוסף"
+     ────────────────────────────────────────────────────────────── */
+  const CYCLE = {
+    WEBINAR:          { date: '2026-10-04', time: '20:00', minutes: 60 },
+    COURSE_START:     '2026-10-11',   // מפגש פתיחה
+    LATE_JOIN_UNTIL:  '2026-10-18',   // המפגש השני — החלון האחרון למאחרים
+    TIME:             '20:00',
+    NEXT_CYCLE_TEXT:  'בקרוב מועד נוסף',
+    TZ:               'Asia/Jerusalem'
   };
 </script>
 
@@ -756,7 +774,7 @@ footer {
     <div class="hero-program-label">תוכנית</div>
     <div class="hero-program-name">תזונת הניקוי<span>האדומה</span></div>
     <div style="font-family:'Heebo',sans-serif; font-size:13px; color:var(--text-mid); font-weight:300; margin-bottom:18px; line-height:1.6;">ניקוי גופני של 30 יום המבוסס על תזונה והקשבה לגוף</div>
-    <div class="hero-tag">אוקטובר–נובמבר 2026</div>
+    <div class="hero-tag" id="cycHeroTag">אוקטובר–נובמבר 2026</div>
     <div class="hero-h1">המסע<br><span class="red-word">פנימה</span></div>
     <div class="hero-h2">מתחיל פה</div>
     <p class="hero-pain">״בתקופה האחרונה נראה שאני מחוברת למקרר — איך יוצאים מזה?״</p>
@@ -764,7 +782,7 @@ footer {
     <div class="hero-btns">
       <a class="btn-red" id="heroSignupBtn" href="#" target="_blank">אני רוצה להצטרף ←</a>
     </div>
-    <div class="hero-meta">תחילת הסדנה 11.10 &nbsp;|&nbsp; ₪1,500</div>
+    <div class="hero-meta" id="cycHeroMeta">תחילת הסדנה 11.10 &nbsp;|&nbsp; ₪1,500</div>
     <div style="margin-top:8px; font-size:12px; color:var(--terracotta); font-weight:400;">✦ ההרשמה מותנית בשיחת התאמה קצרה</div>
   </div>
 
@@ -789,7 +807,7 @@ footer {
 </div>
 
 <!-- ============ DATES HIGHLIGHT ============ -->
-<div class="dates-highlight-bar">
+<div class="dates-highlight-bar" id="cycDatesBar">
   <div class="dh-item">
     <span class="dh-icon">📅</span>
     <span class="dh-text"><strong>מפגש פתיחה:</strong> 11.10</span>
@@ -1069,13 +1087,13 @@ footer {
 </section>
 
 <!-- ============ MEETING SCHEDULE ============ -->
-<section class="schedule-section">
+<section class="schedule-section" id="cycSchedule">
   <div class="section-tag">לוח המפגשים</div>
   <h2 class="section-title">כל המפגשים בימי ראשון בזום, 20:00</h2>
   <p class="body-text">6 מפגשי זום חיים לאורך 30 הימים — הילה מסבירה, עונה ואנה תשתף מהנסיון שלה</p>
 
   <div class="schedule-table">
-    <div class="schedule-webinar">
+    <div class="schedule-webinar" id="cycWebinarRow">
       <div class="schedule-webinar-badge">4.10<span>יום ראשון · 20:00</span></div>
       <div class="schedule-webinar-text">
         <strong>וובינר היכרות — חינמי לכולם</strong>
@@ -1142,7 +1160,7 @@ footer {
     </div>
   </div>
   <div class="p-guarantee">🔒 &nbsp;רכישה מאובטחת &nbsp;|&nbsp; שאלות? מדברים לפני ההרשמה</div>
-  <div class="pricing-footer"> פתיחה 11.10 &nbsp;|&nbsp; תחילת ניקוי 12.10 &nbsp;|&nbsp; סיום 15.11 &nbsp;|&nbsp; כל המפגשים בימי ראשון 20:00–21:00</div>
+  <div class="pricing-footer" id="cycPricingFooter"> פתיחה 11.10 &nbsp;|&nbsp; תחילת ניקוי 12.10 &nbsp;|&nbsp; סיום 15.11 &nbsp;|&nbsp; כל המפגשים בימי ראשון 20:00–21:00</div>
 </section>
 
 <!-- ============ FAQ ============ -->
@@ -1209,7 +1227,7 @@ footer {
   <div class="section-tag" style="justify-content:center;">הצטרפי עכשיו</div>
   <h2 class="section-title">מוכנות להתחיל?</h2>
   <p class="final-body">₪1,500 | הרשמה לסדנה</p>
-  <div class="dates-strip">
+  <div class="dates-strip" id="cycDatesStrip">
     <div class="date-cell"><div class="date-d">11.10</div><div class="date-l">מפגש פתיחה</div></div>
     <div class="date-cell"><div class="date-d">12.10</div><div class="date-l">תחילת ניקוי</div></div>
     <div class="date-cell"><div class="date-d">15.11</div><div class="date-l">סיום חגיגי</div></div>
@@ -1236,51 +1254,103 @@ footer {
 document.getElementById('heroSignupBtn').href   = CONFIG.SIGNUP_FULL;
 document.getElementById('pricingFullBtn').href   = CONFIG.SIGNUP_FULL;
 
-// ─── COUNTDOWN TO FREE WEBINAR ───────────────────────────────────
+// ─── CYCLE ENGINE ────────────────────────────────────────────────
+// מצב הדף נגזר מהתאריכים ב-CYCLE. אין מה לתחזק כאן בפתיחת מחזור.
 (function () {
-  const bar = document.getElementById('countdownBar');
-  const val = document.getElementById('countdownValue');
-  const lab = document.getElementById('countdownLabel');
-  const cta = document.getElementById('countdownCta');
-  if (!bar || !val) return;
+  const $ = id => document.getElementById(id);
 
-  const raw = (CONFIG.WEBINAR_DATE || {}).start || '';
-  const iso = raw.replace(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/, '$1-$2-$3T$4:$5:$6Z');
-  const target = new Date(iso);
-  if (isNaN(target.getTime())) { bar.style.display = 'none'; return; }
-
-  if (cta) cta.href = CONFIG.SIGNUP_FULL;
-
-  // label follows CONFIG, so the date lives in one place only
-  if (lab) {
-    try {
-      const f = target.toLocaleDateString('he-IL', {
-        timeZone: 'Asia/Jerusalem', weekday: 'long', day: 'numeric', month: 'numeric'
-      });
-      const t = target.toLocaleTimeString('he-IL', {
-        timeZone: 'Asia/Jerusalem', hour: '2-digit', minute: '2-digit'
-      });
-      lab.textContent = 'וובינר היכרות חינמי — ' + f + ', ' + t;
-    } catch (e) { /* keep the static fallback already in the HTML */ }
+  // היסט אזור הזמן של ישראל ברגע נתון, כולל שעון קיץ/חורף
+  function tzOffset(ts) {
+    const p = new Intl.DateTimeFormat('en-US', {
+      timeZone: CYCLE.TZ, hour12: false, year: 'numeric', month: '2-digit',
+      day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'
+    }).formatToParts(new Date(ts)).reduce((a, x) => (a[x.type] = x.value, a), {});
+    const asUTC = Date.UTC(+p.year, p.month - 1, +p.day,
+                           p.hour % 24, +p.minute, +p.second);
+    return asUTC - ts;
   }
 
-  const unit = (n, one, two, many) =>
-    n === 1 ? one : n === 2 ? two : n + ' ' + many;
-
-  function tick() {
-    const diff = target.getTime() - Date.now();
-    if (diff <= 0) { bar.style.display = 'none'; return; }
-    const d = Math.floor(diff / 86400000);
-    const hrs = Math.floor((diff % 86400000) / 3600000);
-    const min = Math.floor((diff % 3600000) / 60000);
-    const parts = [];
-    if (d) parts.push(unit(d, 'יום', 'יומיים', 'ימים'));
-    if (hrs) parts.push(unit(hrs, 'שעה', 'שעתיים', 'שעות'));
-    if (!d) parts.push(unit(min, 'דקה', 'שתי דקות', 'דקות'));
-    val.textContent = 'עוד ' + parts.join(' · ');
+  // '2026-10-04' + '20:00' בשעון ישראל → רגע מוחלט
+  function at(dateStr, timeStr) {
+    const [Y, M, D] = String(dateStr).split('-').map(Number);
+    const [hh, mm]  = String(timeStr || '00:00').split(':').map(Number);
+    const naive = Date.UTC(Y, M - 1, D, hh, mm);
+    let ts = naive;
+    for (let i = 0; i < 2; i++) ts = naive - tzOffset(ts);
+    return ts;
   }
-  tick();
-  setInterval(tick, 60000);
+
+  const fmtDate = ts => new Date(ts).toLocaleDateString('he-IL',
+    { timeZone: CYCLE.TZ, weekday: 'long', day: 'numeric', month: 'numeric' });
+  const short = ts => new Date(ts).toLocaleDateString('he-IL',
+    { timeZone: CYCLE.TZ, day: 'numeric', month: 'numeric' });
+
+  const webStart = at(CYCLE.WEBINAR.date, CYCLE.WEBINAR.time);
+  const webEnd   = webStart + (CYCLE.WEBINAR.minutes || 60) * 60000;
+  const courseStart = at(CYCLE.COURSE_START, CYCLE.TIME);
+  const lateEnd     = at(CYCLE.LATE_JOIN_UNTIL, CYCLE.TIME) + 60 * 60000;
+
+  function stateAt(now) {
+    if (now < webEnd)      return 'webinar';
+    if (now < courseStart) return 'pre';
+    if (now < lateEnd)     return 'late';
+    return 'closed';
+  }
+
+  const unit = (n, one, two, many) => n === 1 ? one : n === 2 ? two : n + ' ' + many;
+  function remaining(ms) {
+    const d = Math.floor(ms / 86400000);
+    const hrs = Math.floor((ms % 86400000) / 3600000);
+    const min = Math.floor((ms % 3600000) / 60000);
+    const out = [];
+    if (d) out.push(unit(d, 'יום', 'יומיים', 'ימים'));
+    if (hrs) out.push(unit(hrs, 'שעה', 'שעתיים', 'שעות'));
+    if (!d) out.push(unit(min, 'דקה', 'שתי דקות', 'דקות'));
+    return 'עוד ' + out.join(' · ');
+  }
+
+  const show = (el, on) => { if (el) el.style.display = on ? '' : 'none'; };
+
+  function render(now) {
+    const st  = stateAt(now);
+    const bar = $('countdownBar'), lab = $('countdownLabel'),
+          val = $('countdownValue'), cta = $('countdownCta');
+    if (cta) cta.href = CONFIG.SIGNUP_FULL;
+    document.body.setAttribute('data-cycle-state', st);
+
+    show($('cycWebinarRow'), st === 'webinar');
+
+    if (st === 'closed') {
+      show(bar, false);
+      show($('cycDatesBar'), false);
+      show($('cycDatesStrip'), false);
+      show($('cycSchedule'), false);
+      const tag = $('cycHeroTag'), meta = $('cycHeroMeta'), pf = $('cycPricingFooter');
+      if (tag)  tag.textContent  = CYCLE.NEXT_CYCLE_TEXT;
+      if (meta) meta.innerHTML   = CYCLE.NEXT_CYCLE_TEXT + ' &nbsp;|&nbsp; ₪1,500';
+      if (pf)   pf.textContent   = CYCLE.NEXT_CYCLE_TEXT;
+      return;
+    }
+
+    show(bar, true);
+    if (st === 'webinar') {
+      if (lab) lab.textContent = 'וובינר היכרות חינמי — ' + fmtDate(webStart) + ', ' + CYCLE.WEBINAR.time;
+      if (val) val.textContent = remaining(webStart - now);
+      if (cta) cta.textContent = 'להרשמה חינם ←';
+    } else if (st === 'pre') {
+      if (lab) lab.textContent = 'פתיחת הסדנה — ' + fmtDate(courseStart) + ', ' + CYCLE.TIME;
+      if (val) val.textContent = remaining(courseStart - now);
+      if (cta) cta.textContent = 'להרשמה ←';
+    } else { // late
+      if (lab) lab.textContent = 'הסדנה נפתחה — עוד אפשר להצטרף עד המפגש ב-' + short(at(CYCLE.LATE_JOIN_UNTIL, CYCLE.TIME));
+      if (val) val.textContent = remaining(lateEnd - now);
+      if (cta) cta.textContent = 'להצטרפות ←';
+    }
+  }
+
+  window.__cycleStateAt = stateAt;   // לבדיקות
+  render(Date.now());
+  setInterval(() => render(Date.now()), 60000);
 })();
 
 // ─── MOBILE NAV ──────────────────────────────────────────────────
