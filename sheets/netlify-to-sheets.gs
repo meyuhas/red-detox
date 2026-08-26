@@ -108,8 +108,36 @@ function buildOutreachList() {
     if (seen[email]) return;
     seen[email] = true;
 
-    var p = normalizePhone_(phone);
-    out.push([name, email, p.e164 || '', p.wa || '', p.note || '', when]);
+    out.push({ name: name, email: email, raw: phone, when: when });
+  });
+
+  // מעבר ראשון: מנרמל את מה שאפשר, ואוסף מפת זנב-של-7 → קידומת
+  var tails = {};
+  out.forEach(function (o) {
+    o.p = normalizePhone_(o.raw);
+    if (o.p.e164 && o.p.e164.indexOf('+9725') === 0) {
+      tails[o.p.e164.slice(-7)] = o.p.e164.slice(4, 6);   // '8141717' → '54'
+    }
+  });
+
+  // מעבר שני: משלים מספרים חסרי קידומת לפי רשומה אחרת באותו גיליון.
+  // זו הצלבה ולא ניחוש — הקידומת נלקחת ממספר קיים עם אותו זנב.
+  out.forEach(function (o) {
+    if (o.p.e164 && !o.p.wa) {
+      var d = String(o.raw).replace(/\D/g, '');
+      if (/^972\d{7}$/.test(d)) {
+        var pre = tails[d.slice(3)];
+        if (pre) {
+          var e = '+972' + pre + d.slice(3);
+          o.p = { e164: e, wa: 'https://wa.me/' + e.slice(1),
+                  note: 'הושלמה קידומת ' + pre + ' לפי רשומה אחרת' };
+        }
+      }
+    }
+  });
+
+  out = out.map(function (o) {
+    return [o.name, o.email, o.p.e164 || '', o.p.wa || '', o.p.note || '', o.when];
   });
 
   var tab = ss.getSheetByName('רשימת תפוצה');
