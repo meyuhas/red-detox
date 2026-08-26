@@ -1,56 +1,62 @@
-/**
- * Netlify Forms → Google Sheets
- *
- * מקבל הרשמה מנטליפיי ומוסיף שורה בשתי לשוניות:
- *   1. "Form Integrations" — הקליטה הגולמית, כל ההרשמות
- *   2. "נרשמים ל<תאריך>"   — לשונית לכל מועד וובינר, נוצרת לבד אם חסרה
- *
- * התקנה:
- *   1. בגיליון: Extensions → Apps Script, להדביק את הקובץ הזה
- *   2. Deploy → New deployment → type: Web app
- *        Execute as:      Me
- *        Who has access:  Anyone
- *   3. להעתיק את ה-Web app URL
- *   4. בנטליפיי: Project configuration → Notifications →
- *      Form submission notifications → Add notification →
- *      HTTP POST request → להדביק את הכתובת
- */
-
 var SHEET_RAW = 'Form Integrations';
 var HEADERS = ['Submitted At', 'Name', 'Email', 'Replyto', 'טלפון', 'תאריך וובינר', 'Subject'];
 
 function doPost(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
   try {
-    var body = JSON.parse(e.postData.contents);
-    var p    = body.payload || body;
-    var d    = p.data || {};
+    var d = extract_(e);
 
-    var submittedAt = p.created_at || new Date().toISOString();
-    var name    = d.name    || '';
-    var email   = d.email   || '';
-    var phone   = d.phone   || '';
-    var webinar = d.webinar || '';           // '4.10' או 'יום ראשון, 4.10, 20:00'
-    var subject = 'נר — ' + name;            // אותו דפוס שכבר בגיליון
+    var row = [
+      d.created_at || new Date().toISOString(),
+      d.name || '', d.email || '', d.email || '',
+      d.phone || '', d.webinar || '',
+      'נר — ' + (d.name || '')
+    ];
 
-    var row = [submittedAt, name, email, email, phone, webinar, subject];
-
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
     appendRow_(ss, SHEET_RAW, row);
+    var tab = tabNameFor_(d.webinar || '');
+    if (tab) appendRow_(ss, tab, row);
 
-    var dateTab = tabNameFor_(webinar);
-    if (dateTab) appendRow_(ss, dateTab, row);
-
-    return json_({ ok: true, sheet: dateTab || SHEET_RAW });
+    return json_({ ok: true, sheet: tab || SHEET_RAW });
   } catch (err) {
+    // כשל לא נעלם בשקט — נרשם ללשונית יומן עם מה שהתקבל בפועל
+    try {
+      var log = ss.getSheetByName('_log') || ss.insertSheet('_log');
+      log.appendRow([new Date(), String(err),
+                     e && e.postData ? e.postData.type : '',
+                     e && e.postData ? String(e.postData.contents).slice(0, 400) : '',
+                     JSON.stringify(e && e.parameter || {}).slice(0, 400)]);
+    } catch (_) {}
     return json_({ ok: false, error: String(err) });
   }
 }
 
-/** 'יום ראשון, 4.10, 20:00' → 'נרשמים ל4/10' */
+/** נטליפיי עשויה לשלוח JSON או form-encoded. שניהם נתמכים. */
+function extract_(e) {
+  var raw = e && e.postData ? e.postData.contents : '';
+  var body = null;
+  try { body = JSON.parse(raw); } catch (_) { body = null; }
+
+  if (!body && e && e.parameter && e.parameter.payload) {
+    try { body = JSON.parse(e.parameter.payload); } catch (_) { body = null; }
+  }
+  if (body) {
+    var p = body.payload || body;
+    var d = p.data || p;
+    return { created_at: p.created_at, name: d.name, email: d.email,
+             phone: d.phone, webinar: d.webinar };
+  }
+  var q = (e && e.parameter) || {};
+  if (q.name || q.email) {
+    return { created_at: q.created_at, name: q.name, email: q.email,
+             phone: q.phone, webinar: q.webinar };
+  }
+  throw new Error('גוף הבקשה לא נקרא. type=' + (e && e.postData ? e.postData.type : 'none'));
+}
+
 function tabNameFor_(webinar) {
   var m = String(webinar).match(/(\d{1,2})[.\/](\d{1,2})/);
-  if (!m) return null;
-  return 'נרשמים ל' + Number(m[1]) + '/' + Number(m[2]);
+  return m ? 'נרשמים ל' + Number(m[1]) + '/' + Number(m[2]) : null;
 }
 
 function appendRow_(ss, tabName, row) {
@@ -66,114 +72,4 @@ function appendRow_(ss, tabName, row) {
 function json_(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
                        .setMimeType(ContentService.MimeType.JSON);
-}
-
-
-/* ══════════════════════════════════════════════════════════════
-   רשימת תפוצה למחזור חדש
-   ──────────────────────────────────────────────────────────────
-   מריצים ידנית מתוך העורך: בוחרים buildOutreachList ולוחצים Run.
-   קורא את "Form Integrations", מנקה, ובונה לשונית "רשימת תפוצה".
-
-   מה הוא עושה:
-   · מסיר שורות בדיקה (טסט, בדיקה, וכתובות הצוות)
-   · מאחד כפילויות לפי אימייל, ושומר את ההרשמה הראשונה
-   · מנרמל טלפונים ל-+972... ובונה קישור וואטסאפ
-   · מסמן טלפון שלא ניתן לפענח במקום לנחש אותו
-   ══════════════════════════════════════════════════════════════ */
-
-var TEST_PATTERNS = ['טסט', 'בדיקה', 'oren meyuhas', 'anna@meyuhas.tv',
-                     'oren@meyuhas.tv', 'crip05@gmail.com', 'amir.meyuhas@gmail.com'];
-
-function buildOutreachList() {
-  var ss  = SpreadsheetApp.getActiveSpreadsheet();
-  var src = ss.getSheetByName(SHEET_RAW);
-  if (!src) throw new Error('לא נמצאה הלשונית ' + SHEET_RAW);
-
-  var rows = src.getDataRange().getValues();
-  rows.shift();                                   // כותרות
-
-  var seen = {}, out = [];
-  rows.forEach(function (r) {
-    var name  = String(r[1] || '').trim();
-    var email = String(r[2] || '').trim().toLowerCase();
-    var phone = String(r[4] || '').trim();
-    var when  = String(r[5] || '').trim();
-    if (!email) return;
-
-    var hay = (name + ' ' + email).toLowerCase();
-    for (var i = 0; i < TEST_PATTERNS.length; i++) {
-      if (hay.indexOf(TEST_PATTERNS[i].toLowerCase()) !== -1) return;
-    }
-    if (seen[email]) return;
-    seen[email] = true;
-
-    out.push({ name: name, email: email, raw: phone, when: when });
-  });
-
-  // מעבר ראשון: מנרמל את מה שאפשר, ואוסף מפת זנב-של-7 → קידומת
-  var tails = {};
-  out.forEach(function (o) {
-    o.p = normalizePhone_(o.raw);
-    if (o.p.e164 && o.p.e164.indexOf('+9725') === 0) {
-      tails[o.p.e164.slice(-7)] = o.p.e164.slice(4, 6);   // '8141717' → '54'
-    }
-  });
-
-  // מעבר שני: משלים מספרים חסרי קידומת לפי רשומה אחרת באותו גיליון.
-  // זו הצלבה ולא ניחוש — הקידומת נלקחת ממספר קיים עם אותו זנב.
-  out.forEach(function (o) {
-    if (o.p.e164 && !o.p.wa) {
-      var d = String(o.raw).replace(/\D/g, '');
-      if (/^972\d{7}$/.test(d)) {
-        var pre = tails[d.slice(3)];
-        if (pre) {
-          var e = '+972' + pre + d.slice(3);
-          o.p = { e164: e, wa: 'https://wa.me/' + e.slice(1),
-                  note: 'הושלמה קידומת ' + pre + ' לפי רשומה אחרת' };
-        }
-      }
-    }
-  });
-
-  out = out.map(function (o) {
-    return [o.name, o.email, o.p.e164 || '', o.p.wa || '', o.p.note || '', o.when];
-  });
-
-  var tab = ss.getSheetByName('רשימת תפוצה');
-  if (tab) ss.deleteSheet(tab);
-  tab = ss.insertSheet('רשימת תפוצה');
-  tab.appendRow(['שם', 'אימייל', 'טלפון', 'וואטסאפ', 'הערה', 'וובינר קודם']);
-  tab.getRange(1, 1, 1, 6).setFontWeight('bold');
-  if (out.length) tab.getRange(2, 1, out.length, 6).setValues(out);
-  tab.setFrozenRows(1);
-
-  SpreadsheetApp.getUi().alert(
-    'נבנתה רשימת תפוצה: ' + out.length + ' אנשים ייחודיים.\n' +
-    'שורות שסומנו בהערה דורשות בדיקה ידנית של הטלפון.');
-}
-
-/** מחזיר {e164, wa, note}. לא מנחש כשהמספר לא חד-משמעי. */
-function normalizePhone_(raw) {
-  var d = String(raw).replace(/\D/g, '');
-  if (!d) return { note: 'אין טלפון' };
-
-  if (d.indexOf('972') === 0) d = '0' + d.slice(3);      // 972541234567 → 0541234567
-  if (d.length === 9 && d.charAt(0) !== '0') d = '0' + d; // 541234567    → 0541234567
-
-  // נייד ישראלי: 05X ואחריו 7 ספרות
-  if (/^05\d{8}$/.test(d)) {
-    var e = '+972' + d.slice(1);
-    return { e164: e, wa: 'https://wa.me/' + e.replace('+', '') };
-  }
-  // קווי ישראלי: 0X ואחריו 7 ספרות
-  if (/^0[23489]\d{7}$/.test(d)) {
-    var e2 = '+972' + d.slice(1);
-    return { e164: e2, wa: 'https://wa.me/' + e2.replace('+', ''), note: 'קווי' };
-  }
-  // מספר זר שנראה שלם
-  if (String(raw).charAt(0) === '+' && d.length >= 10) {
-    return { e164: '+' + d, wa: 'https://wa.me/' + d, note: 'חו״ל' };
-  }
-  return { e164: String(raw), note: 'פורמט לא מזוהה — לבדוק ידנית' };
 }
