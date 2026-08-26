@@ -1430,6 +1430,7 @@ document.getElementById('pricingFullBtn').href   = CONFIG.SIGNUP_FULL;
       // שמות המשתנים חייבים להתאים לתבנית ב-EmailJS: name / email / date / time / message
       await emailjs.send('service_7ge3b4c', 'template_88c6ks8', {
         name: nameV,
+        first_name: nameV.split(/\s+/)[0],   // שם פרטי בלבד, לפנייה במייל
         email: emailV,
         phone: phoneV || '—',
         date: Cycle.short(Cycle.webinarStart),          // '4.10' — התבנית כבר כותבת "יום ראשון" לפניו
