@@ -19,7 +19,12 @@ window.CYCLE = {
   ZOOM_LINK:        'https://us06web.zoom.us/j/86158650122?pwd=bfa9jDhZ3DRslUY3O2XtazELUrh60Y.1',
 
   NEXT_CYCLE_TEXT:  'בקרוב מועד נוסף',
-  TZ:               'Asia/Jerusalem'
+  TZ:               'Asia/Jerusalem',
+
+  // דומיינים שבהם הדף מוגש בגרסת "בלי מחיר": כל אזכור תמחור נעלם
+  // וכל כפתורי הרכישה מנתבים לטופס הוובינר במקום לדף התשלום.
+  // אותו קובץ בדיוק מוגש בשני האתרים - אין עותק שני לתחזק.
+  NO_PRICE_HOSTS:   ['red-detox-info.netlify.app']
 };
 
 window.Cycle = (function () {

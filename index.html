@@ -773,7 +773,7 @@ footer {
     <a class="nav-link" href="#about">על הסדנה</a>
     <a class="nav-link" href="#testimonials">עדויות</a>
     <a class="nav-link" href="#hosts">המנחות</a>
-    <a class="nav-link" href="#pricing">מחיר</a>
+    <a class="nav-link" href="#pricing" data-price>מחיר</a>
   </div>
   <div class="nav-hamburger" onclick="toggleNav()">
     <span></span><span></span><span></span>
@@ -955,7 +955,7 @@ footer {
   </div>
   <div style="margin-top:48px;text-align:center;">
     <button class="btn-red" onclick="window.open(CONFIG.SIGNUP_FULL,'_blank')" style="display:inline-flex;">אני רוצה להצטרף ←</button>
-    <p style="color:rgba(255,255,255,0.3);font-size:13px;margin-top:12px;font-weight:300;">₪1,500</p>
+    <p data-price style="color:rgba(255,255,255,0.3);font-size:13px;margin-top:12px;font-weight:300;">₪1,500</p>
   </div>
 </section>
 
@@ -1325,7 +1325,9 @@ footer {
 </section>
 
 <!-- ============ CANCELLATION POLICY ============ -->
-<section style="background:#fff; padding:60px 48px;">
+<!-- מוסתר בגרסה נטולת המחיר: אין בה עסקה, ולכן אין מה לבטל.
+     המכירה קורית בדף הראשי, שם המדיניות מוצגת במלואה. -->
+<section data-price style="background:#fff; padding:60px 48px;">
   <div style="max-width:660px;">
     <div class="section-tag">מדיניות ביטול</div>
     <h2 class="section-title" style="font-size:clamp(22px,2.8vw,32px); margin-bottom:20px;">מדיניות ביטול והחזרים</h2>
@@ -1450,10 +1452,51 @@ document.getElementById('pricingFullBtn').href   = CONFIG.SIGNUP_FULL;
   }
 
   window.__cycleStateAt = stateAt;   // לבדיקות
-  window.__cycleRender  = render;    // לבדיקות
+  window.__cycleRender  = function (t) { render(t); applyNoPrice(); };
   render(Date.now());
-  setInterval(() => render(Date.now()), 60000);
+  applyNoPrice();
+  setInterval(() => { render(Date.now()); applyNoPrice(); }, 60000);
 })();
+
+// ─── מצב "בלי מחיר" ──────────────────────────────────────────────
+// אותו קובץ מוגש בשני אתרים. באתר ה-info כל אזכור תמחור נעלם,
+// וכפתורי הרכישה מנתבים לטופס הוובינר במקום לדף התשלום.
+// ?noprice=1 מאפשר לבדוק את המצב בכל דומיין.
+// הצהרת פונקציה ולא השמה, כדי שתהיה זמינה גם למנוע המחזור
+// שרץ למעלה בקובץ ומפעיל את applyNoPrice בטעינה הראשונה.
+function isNoPrice() {
+  if (window.NO_PRICE !== undefined) return window.NO_PRICE;
+  try {
+    var hosts = (window.CYCLE && CYCLE.NO_PRICE_HOSTS) || [];
+    window.NO_PRICE = hosts.indexOf(location.hostname) !== -1
+                      || /[?&]noprice=1/.test(location.search);
+  } catch (e) { window.NO_PRICE = false; }
+  return window.NO_PRICE;
+}
+
+function applyNoPrice() {
+  if (!isNoPrice()) return;
+  var hide = function (el) { if (el) el.style.display = 'none'; };
+
+  hide(document.getElementById('pricing'));
+  document.querySelectorAll('[data-price]').forEach(hide);
+  document.querySelectorAll('.cta-note').forEach(hide);
+
+  var meta = document.getElementById('cycHeroMeta');
+  if (meta) meta.innerHTML = meta.innerHTML.split('&nbsp;|&nbsp;')[0].trim();
+
+  var fb = document.querySelector('.final-body');
+  if (fb) fb.textContent = 'מפגש זום חינמי לפני שהסדנה נפתחת';
+
+  // כל כפתור שמוביל לתשלום מנותב לטופס הוובינר
+  document.querySelectorAll('button[onclick*="SIGNUP_FULL"]').forEach(function (b) {
+    b.setAttribute('onclick',
+      "document.getElementById('webinar-signup').scrollIntoView({behavior:'smooth',block:'start'})");
+    if (/להצטרף|הרשמה|להצטרפות/.test(b.textContent)) b.textContent = 'לוובינר החינמי ←';
+  });
+  var cta = document.getElementById('countdownCta');
+  if (cta) { cta.href = '#webinar-signup'; cta.removeAttribute('target'); }
+}
 
 // ─── SCREENING ───────────────────────────────────────────────────
 // שלוש שאלות לפני הטופס. תשובה חיובית לשתיים הראשונות אינה חוסמת
