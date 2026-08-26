@@ -1433,7 +1433,11 @@ document.getElementById('pricingFullBtn').href   = CONFIG.SIGNUP_FULL;
         email: emailV,
         phone: phoneV || '—',
         date: Cycle.short(Cycle.webinarStart),          // '4.10' — התבנית כבר כותבת "יום ראשון" לפניו
-        zoom: CYCLE.ZOOM_LINK || 'הקישור יישלח אלייך במייל לפני המפגש',
+        // שניים, כדי שהתבנית תוכל לעטוף בהיפרלינק בלי לסכן קישור שבור:
+        // zoom הוא תמיד כתובת חוקית, zoom_text הוא מה שנראה לעין
+        zoom:      CYCLE.ZOOM_LINK || 'https://red-detox.netlify.app',
+        zoom_text: CYCLE.ZOOM_LINK ? 'להצטרפות למפגש בזום ←'
+                                   : 'הקישור יישלח אלייך לפני המפגש',
         time: new Date().toLocaleString('he-IL'),
         message: 'הרשמה לוובינר ההיכרות'
       });
