@@ -1180,6 +1180,47 @@ footer {
         <label>אל תמלאי שדה זה <input name="bot-field" tabindex="-1" autocomplete="off"></label>
       </p>
 
+      <div id="screeningBlock">
+        <p style="font-size:13px; color:var(--text-mid); margin:0 0 16px; font-weight:300;">
+          שלוש שאלות קצרות, כדי שנוכל לוודא שהתוכנית מתאימה לך
+        </p>
+
+        <div class="screening-q">
+          <p>האם את בהריון או מניקה?</p>
+          <div class="screening-options">
+            <button type="button" class="screening-opt" data-q="1" data-v="yes" onclick="pickOpt(this)">כן</button>
+            <button type="button" class="screening-opt" data-q="1" data-v="no"  onclick="pickOpt(this)">לא</button>
+          </div>
+        </div>
+
+        <div class="screening-q">
+          <p>האם יש לך מצב רפואי מורכב שדורש הגבלות תזונתיות מיוחדות?</p>
+          <div class="screening-options">
+            <button type="button" class="screening-opt" data-q="2" data-v="yes" onclick="pickOpt(this)">כן</button>
+            <button type="button" class="screening-opt" data-q="2" data-v="no"  onclick="pickOpt(this)">לא</button>
+          </div>
+        </div>
+
+        <div class="screening-q">
+          <p>האם את מוכנה להשקיע כ-30 דקות ביום לאורך 30 הימים?</p>
+          <div class="screening-options">
+            <button type="button" class="screening-opt" data-q="3" data-v="yes" onclick="pickOpt(this)">כן, בהחלט</button>
+            <button type="button" class="screening-opt" data-q="3" data-v="no"  onclick="pickOpt(this)">לא בטוחה</button>
+          </div>
+        </div>
+
+        <div id="notFitMsg" class="screening-not-fit">
+          🌿 <strong>תודה על הכנות.</strong><br>
+          מומלץ להתייעץ עם הרופא/ה לפני הצטרפות לתוכנית — אנחנו כאן לכל שאלה:
+          <a href="mailto:hilaaflalo@gmail.com" style="color:var(--terracotta);font-weight:500;">hilaaflalo@gmail.com</a>
+        </div>
+      </div>
+
+      <input type="hidden" name="בהריון או מניקה" id="ansPregnant">
+      <input type="hidden" name="מצב רפואי מורכב" id="ansMedical">
+      <input type="hidden" name="פנויה 30 דקות ביום" id="ansCommitted">
+
+      <div id="formFields" style="display:none;">
       <div class="form-group">
         <label for="inputName">שם מלא <span style="color:var(--red);">*</span></label>
         <input type="text" id="inputName" name="name" placeholder="שם פרטי ומשפחה" required autocomplete="name">
@@ -1223,7 +1264,9 @@ footer {
         <span id="submitText">שמרו לי מקום ←</span>
       </button>
       <p id="submitError" class="submit-error">השליחה נכשלה. אפשר לנסות שוב, או לכתוב ל-hilaaflalo@gmail.com</p>
+      <p class="form-note">📧 קישור הזום יישלח לאימייל שלך לפני הוובינר</p>
       <p class="form-note">🔒 לא ספאם. רק פרטים על הוובינר.</p>
+      </div>
     </form>
   </div>
 </section>
@@ -1412,6 +1455,33 @@ document.getElementById('pricingFullBtn').href   = CONFIG.SIGNUP_FULL;
   setInterval(() => render(Date.now()), 60000);
 })();
 
+// ─── SCREENING ───────────────────────────────────────────────────
+// שלוש שאלות לפני הטופס. תשובה חיובית לשתיים הראשונות אינה חוסמת
+// הרשמה — היא מציגה המלצה להתייעץ עם רופא/ה. שדות הטופס נחשפים
+// רק אחרי ששלושתן נענו.
+window._screeningAnswers = {};
+
+function pickOpt(btn) {
+  var q = btn.dataset.q, v = btn.dataset.v;
+  btn.parentElement.querySelectorAll('.screening-opt')
+     .forEach(function (b) { b.classList.remove('selected'); });
+  btn.classList.add('selected');
+  window._screeningAnswers[q] = v;
+
+  var a = window._screeningAnswers;
+  var notFit = a['1'] === 'yes' || a['2'] === 'yes';
+  var all    = a['1'] && a['2'] && a['3'];
+
+  document.getElementById('notFitMsg').style.display = notFit ? 'block' : 'none';
+  document.getElementById('formFields').style.display = all ? 'block' : 'none';
+
+  // נשמר עם ההרשמה, כדי שהשיחה איתה תתחיל מנקודה מודעת
+  var he = function (x) { return x === 'yes' ? 'כן' : x === 'no' ? 'לא' : ''; };
+  document.getElementById('ansPregnant').value  = he(a['1']);
+  document.getElementById('ansMedical').value   = he(a['2']);
+  document.getElementById('ansCommitted').value = he(a['3']);
+}
+
 // ─── WEBINAR SIGNUP ──────────────────────────────────────────────
 // ההרשמה נשמרת ב-Netlify Forms; מייל התודה לנרשמת נשלח ב-EmailJS.
 // אין נפילת mailto — תוכנת מייל לא נפתחת בשום מקרה.
@@ -1490,7 +1560,10 @@ document.getElementById('pricingFullBtn').href   = CONFIG.SIGNUP_FULL;
       const body = new URLSearchParams({
         'form-name': 'webinar',
         name: nameV, email: emailV, phone: phoneV || '—',
-        webinar: webinarWhen
+        webinar: webinarWhen,
+        'בהריון או מניקה':    document.getElementById('ansPregnant').value,
+        'מצב רפואי מורכב':    document.getElementById('ansMedical').value,
+        'פנויה 30 דקות ביום': document.getElementById('ansCommitted').value
       });
       const res = await fetch('/', {
         method: 'POST',
