@@ -1,0 +1,18 @@
+name: netlify-cli-deploy
+on:
+  push:
+    branches: [cli-test]
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Deploy without build
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        run: |
+          npx --yes netlify-cli@17 deploy --prod --dir=. --site=red-detox \
+            --message="cli-test: deploy without build ($GITHUB_SHA)"
